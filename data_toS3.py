@@ -72,3 +72,25 @@ if football_data:
     csv_filename = json_to_csv(football_data)
     if csv_filename:
         upload_to_s3(csv_filename, "ads507-footballapi", "football_fixtures.csv")
+
+def upload_to_s3(file_name, bucket_name, s3_file_name):
+    """Upload file to AWS S3 bucket."""
+    try:
+        with open(file_name, "rb") as data:
+            s3.put_object(
+                Bucket=bucket_name,
+                Key=s3_file_name,
+                Body=data,
+                ContentType="text/csv"
+            )
+        print(f"File {file_name} uploaded successfully to S3 as {s3_file_name}")
+    except Exception as e:
+        print(f"Error uploading to S3: {e}")
+
+
+# Main execution
+football_data = fetch_fixtures() 
+if isinstance(football_data, pd.DataFrame):
+    csv_filename = data_to_csv(football_data)
+    if csv_filename:
+        upload_to_s3(csv_filename, "ads507-footballapi", "football_test_data.csv")

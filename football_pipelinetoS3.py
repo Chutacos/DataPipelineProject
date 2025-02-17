@@ -33,7 +33,7 @@ def fetch_data(url, querystring, headers):
 
 def fetch_fixtures(): 
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
-    querystring = {"league": "39", "season": "2024", "round": "Regular Season - 1"}
+    querystring = {"league": "39", "season": "2024"}
     data = fetch_data(url, querystring, config.headers)
     if not data or "response" not in data:
         print("Invalid or empty data")

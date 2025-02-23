@@ -31,7 +31,7 @@ def fetch_fixtures():
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
 
     #test query 
-    querystring = {"league": "39", "season": "2024", "round": "Regular Season - 1"}
+    querystring = {"league": "39", "season": "2024"}
 
     #live query
     #current_date = str(date.today())

@@ -69,9 +69,12 @@ def fetch_fixture_lineups(fixtures_df):
         lineups_obj = fetch_data(url, querystring, config.headers)
         time.sleep(2)
         if lineups_obj and "response" in lineups_obj:
-            fix_lineups.extend(lineups_obj["response"])
+            for lineup in lineups_obj["response"]:
+                lineup["fixture.id"] = fix_id
+                fix_lineups.append(lineup)
+                
     df = pd.json_normalize(fix_lineups, sep='.')
-    filename = "fixture_lineups.csv"
+    filename = "fixture_lineups_with_match_id.csv"
     df.to_csv(filename, index=False)
     upload_to_s3(filename, config.s3_bucket_name)
     return df

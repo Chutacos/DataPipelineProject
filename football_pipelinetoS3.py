@@ -5,7 +5,12 @@ import config
 import pandas as pd
 from tqdm import tqdm
 import time
+import datetime
 from datetime import date
+
+current_date = datetime.date.today()
+begin_range = current_date - datetime.timedelta(days=current_date.weekday() + 7)
+end_range = begin_range + datetime.timedelta(days=6)
 
 s3 = boto3.client(
     "s3",
@@ -33,7 +38,7 @@ def fetch_data(url, querystring, headers):
 
 def fetch_fixtures(): 
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
-    querystring = {"league": "39", "season": "2024"}
+    querystring = {"league": "39", "season": "2024", "from": begin_range, "to": end_range}
     data = fetch_data(url, querystring, config.headers)
     if not data or "response" not in data:
         print("Invalid or empty data")
@@ -53,6 +58,8 @@ def fetch_fixture_stats(fixtures_df):
         stats_obj = fetch_data(url, querystring, config.headers)
         time.sleep(2)
         if stats_obj and "response" in stats_obj:
+            stats_obj["response"][0]["fixture"] = stats_obj['parameters']['fixture']
+            stats_obj["response"][1]["fixture"] = stats_obj['parameters']['fixture']
             fix_stats.extend(stats_obj["response"])
     df = pd.json_normalize(fix_stats, sep='.')
     filename = "fixture_statistics.csv"
@@ -69,10 +76,7 @@ def fetch_fixture_lineups(fixtures_df):
         lineups_obj = fetch_data(url, querystring, config.headers)
         time.sleep(2)
         if lineups_obj and "response" in lineups_obj:
-            for lineup in lineups_obj["response"]:
-                lineup["fixture.id"] = fix_id
-                fix_lineups.append(lineup)
-                
+            fix_lineups.extend(lineups_obj["response"])
     df = pd.json_normalize(fix_lineups, sep='.')
     filename = "fixture_lineups_with_match_id.csv"
     df.to_csv(filename, index=False)

@@ -8,9 +8,7 @@ import time
 import datetime
 from datetime import date
 
-current_date = datetime.date.today()
-begin_range = current_date - datetime.timedelta(days=current_date.weekday() + 7)
-end_range = begin_range + datetime.timedelta(days=6)
+
 
 s3 = boto3.client(
     "s3",
@@ -18,6 +16,8 @@ s3 = boto3.client(
     aws_secret_access_key=config.aws_secret_access_key,
     region_name=config.region_name
 )
+
+
 
 def upload_to_s3(filename, bucket_name, object_name=None):
     if object_name is None:
@@ -28,6 +28,8 @@ def upload_to_s3(filename, bucket_name, object_name=None):
     except Exception as e:
         print(f"Error uploading {filename}: {e}")
 
+
+
 def fetch_data(url, querystring, headers): 
     response = requests.get(url, headers=headers, params=querystring)
     if response.status_code == 200:
@@ -36,9 +38,11 @@ def fetch_data(url, querystring, headers):
         print(f"Error: {response.status_code}, {response.text}")
         return None
 
+
+
 def fetch_fixtures(): 
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures"
-    querystring = {"league": "39", "season": "2024", "from": begin_range, "to": end_range}
+    querystring = {"league": "39", "season": "2024"}
     data = fetch_data(url, querystring, config.headers)
     if not data or "response" not in data:
         print("Invalid or empty data")
@@ -49,6 +53,8 @@ def fetch_fixtures():
     upload_to_s3(filename, config.s3_bucket_name)
     return df
 
+
+
 def fetch_fixture_stats(fixtures_df): 
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures/statistics"
     fix_stats = []
@@ -58,14 +64,18 @@ def fetch_fixture_stats(fixtures_df):
         stats_obj = fetch_data(url, querystring, config.headers)
         time.sleep(2)
         if stats_obj and "response" in stats_obj:
-            stats_obj["response"][0]["fixture"] = stats_obj['parameters']['fixture']
-            stats_obj["response"][1]["fixture"] = stats_obj['parameters']['fixture']
+            if len(stats_obj["response"]) > 0:
+                stats_obj["response"][0]["fixture"] = stats_obj['parameters']['fixture']
+            if len(stats_obj["response"]) > 1:    
+                stats_obj["response"][1]["fixture"] = stats_obj['parameters']['fixture']
             fix_stats.extend(stats_obj["response"])
     df = pd.json_normalize(fix_stats, sep='.')
     filename = "fixture_statistics.csv"
     df.to_csv(filename, index=False)
     upload_to_s3(filename, config.s3_bucket_name)
     return df
+
+
 
 def fetch_fixture_lineups(fixtures_df): 
     url = "https://api-football-v1.p.rapidapi.com/v3/fixtures/lineups"
@@ -76,18 +86,26 @@ def fetch_fixture_lineups(fixtures_df):
         lineups_obj = fetch_data(url, querystring, config.headers)
         time.sleep(2)
         if lineups_obj and "response" in lineups_obj:
+            if len(lineups_obj["response"]) > 0:
+                lineups_obj["response"][0]["fixture"] = lineups_obj['parameters']['fixture']
+            if len(lineups_obj["response"]) > 1:
+                lineups_obj["response"][1]["fixture"] = lineups_obj['parameters']['fixture']
             fix_lineups.extend(lineups_obj["response"])
     df = pd.json_normalize(fix_lineups, sep='.')
-    filename = "fixture_lineups_with_match_id.csv"
+    filename = "fixture_lineups.csv"
     df.to_csv(filename, index=False)
     upload_to_s3(filename, config.s3_bucket_name)
     return df
+
+
 
 def process_and_save_all():
     fixtures = fetch_fixtures()
     if fixtures is not None:
         fetch_fixture_stats(fixtures)
         fetch_fixture_lineups(fixtures)
+
+
 
 if __name__ == "__main__":
     process_and_save_all()

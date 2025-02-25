@@ -124,11 +124,12 @@ The **Tableau Dashboard** provides the following insights:
 1. **Data Extraction:**
    - Run the Python script to fetch the latest football data.
      ```bash
-     python extract_data.py
+     python s3_upload.py
      ```
 
 2. **Data Transformation and Loading:**
    - Data is automatically processed using AWS Glue and loaded into Redshift.
+   - Run the ETL scripts in this repo and update where necessary with your AWS information (s3 bucket and redshift)
 
 3. **Data Visualization:**
    - Access the Tableau Dashboard to view updated performance metrics.
